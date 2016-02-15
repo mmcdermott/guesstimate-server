@@ -6,6 +6,7 @@ class Space < ActiveRecord::Base
   after_initialize :init
   scope :is_private, -> { where(is_private: true) }
   after_create :ensure_metric_space_ids
+  before_save :ensure_appropriate_access
 
   algoliasearch per_environment: true, disable_indexing: Rails.env.test? do
     attribute :id, :name, :description, :user_id, :created_at, :updated_at, :is_private
@@ -53,5 +54,9 @@ class Space < ActiveRecord::Base
       end
       self.save
     end
+  end
+
+  def ensure_appropriate_access
+    return !is_private || (user.has_private_access? && !user.satisfied_private_model_count)
   end
 end
